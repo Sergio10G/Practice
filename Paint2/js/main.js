@@ -1,15 +1,28 @@
-console.log("JS funciona");
+console.log("Bienvenido a Paint2. ¡Mejor que la tuberculosis!");
 
 // DECLARACIÓN E INICIALIZACIÓN DE VARIABLES
+let btnStop = document.getElementById("botonStop");
+let btnStart = document.getElementById("btnStart");
 
-let btnLimpiarCanvas = document.getElementById("limpiarCanvas");
+let btnPincelLinea = document.getElementById("pincelLinea");
+let btnPincelCuadro = document.getElementById("pincelCuadro");
+let btnPincelLineaCuadros = document.getElementById("pincelLineaCuadros");
+let selectorGrosor = document.getElementById("selector_grosor");
+let valorGrosor = document.getElementById("valor_grosor");
 let colorPicker = document.getElementById("colorPicker");
+let btnLimpiarCanvas = document.getElementById("limpiarCanvas");
+let btnGuardar = document.getElementById("guardar");
 
-let canvasDibujo;
+let listaPinceles = [btnPincelLinea, btnPincelCuadro, btnPincelLineaCuadros];
+
+let canvas;
 let dibujo;
-let pintar = false;
+let triggerPintar = false;
 
 dimensionarCanvas();
+
+
+//  DECLARACIÓN DE OBJETOS
 
 let posicionRaton = {
     mouseActivo  : false,
@@ -18,17 +31,17 @@ let posicionRaton = {
 };
 
 let pincel = {
-    color  : "#000000",
-    grosor : 10,
-    forma  : "linea",
+    color  : "#000000", 
+    grosor : 5,
+    forma  : "lineaHibrida",
+    ultimaPosicion : {x: 0, y: 0},
     incrementarGrosor : (incremento) => {
         if (this.grosor + incremento >= 1 && this.grosor + incremento <= dibujo.height){
             this.grosor += incremento;
             return true;
         }    
         return false;
-    },
-    ultimaPosicion : {x: 0, y: 0}
+    }
 }
 
 // MÉTODOS
@@ -47,17 +60,51 @@ function limpiarCanvas(){
 }
 
 function dimensionarCanvas(){
-    canvasDibujo = document.getElementById("canvasDibujo");
+    canvas = document.getElementById("canvas");
 
-    canvasDibujo.width = canvasDibujo.clientWidth;
-    canvasDibujo.height = canvasDibujo.clientHeight;
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
 
     dibujo = {
-        canvas: canvasDibujo,
-        ctx   : canvasDibujo.getContext('2d'),
-        width : canvasDibujo.clientWidth,
-        height: canvasDibujo.clientHeight
+        canvas: canvas,
+        ctx   : canvas.getContext('2d'),
+        width : canvas.clientWidth,
+        height: canvas.clientHeight
     }
+}
+
+function pintarConPincel(formaPincel){
+    switch(formaPincel) {
+        case "cuadro":
+            dibujo.ctx.fillRect(posicionRaton.x - (pincel.grosor / 2), posicionRaton.y - (pincel.grosor / 2), pincel.grosor, pincel.grosor);
+            break;
+        
+        case "linea":
+            dibujo.ctx.beginPath();
+            dibujo.ctx.moveTo(pincel.ultimaPosicion.x, pincel.ultimaPosicion.y);
+            dibujo.ctx.lineTo(posicionRaton.x, posicionRaton.y);
+            dibujo.ctx.stroke();
+            break;
+        
+        case "lineaCuadros":
+            dibujo.ctx.fillRect(pincel.ultimaPosicion.x, pincel.ultimaPosicion.y, Math.abs(pincel.ultimaPosicion.x - posicionRaton.x), Math.abs(pincel.ultimaPosicion.y - posicionRaton.y));
+            break;
+        
+        case "lineaHibrida":
+            let distanciaEntrePts = Math.sqrt(Math.pow(pincel.ultimaPosicion.x - posicionRaton.x, 2) + Math.pow(pincel.ultimaPosicion.y - posicionRaton.y, 2));
+            if(distanciaEntrePts <= pincel.grosor / 2){
+                pintarConPincel("cuadro");
+                break;
+            }
+            pintarConPincel("linea");
+            break;
+    }
+}
+
+function deseleccionarPinceles(){
+    listaPinceles.forEach(pincel => {
+        pincel.classList.remove('btn-seleccionado');
+    });
 }
 
 // CONTROL DE EVENTOS
@@ -66,25 +113,27 @@ function dimensionarCanvas(){
  *  CANVAS PRINCIPAL
 */
 
-canvasDibujo.addEventListener("mouseover", (e) => {
+canvas.addEventListener("mouseover", (e) => {
     posicionRaton.mouseActivo = true;
 });
 
-canvasDibujo.addEventListener("mousemove", (e) => {
-    posicionRaton.dibujo = getMousePos(canvasDibujo, e);
+canvas.addEventListener("mousemove", (e) => {
+    let pos = getMousePos(canvas, e);
+    posicionRaton.x = pos.x;
+    posicionRaton.y = pos.y;
 });
 
-canvasDibujo.addEventListener("mousedown", (e) => {
-    pintar = true;
+canvas.addEventListener("mousedown", (e) => {
+    triggerPintar = true;
 });
 
-canvasDibujo.addEventListener("mouseup", (e) => {
-    pintar = false;
+canvas.addEventListener("mouseup", (e) => {
+    triggerPintar = false;
 });
 
-canvasDibujo.addEventListener("mouseout", (e) => {
+canvas.addEventListener("mouseout", (e) => {
     posicionRaton.mouseActivo = false;
-    pintar = false;
+    triggerPintar = false;
 });
 
 
@@ -92,38 +141,71 @@ canvasDibujo.addEventListener("mouseout", (e) => {
  *  HERRAMIENTAS
 */
 
-btnLimpiarCanvas.addEventListener("click", () => {
-    limpiarCanvas();
-});
-
 colorPicker.addEventListener("change", () => {
     //console.log("Color cambiado: " + colorPicker.value);
     pincel.color = colorPicker.value;
 });
 
+btnPincelLinea.addEventListener("click", () =>{
+    pincel.forma = "lineaHibrida";
+
+    deseleccionarPinceles();
+    btnPincelLinea.classList.add('btn-seleccionado');
+});
+
+btnPincelCuadro.addEventListener("click", () =>{
+    pincel.forma = "cuadro";
+
+    deseleccionarPinceles();
+    btnPincelCuadro.classList.add('btn-seleccionado');
+});
+
+btnPincelLineaCuadros.addEventListener("click", () =>{
+    pincel.forma = "lineaCuadros";
+
+    deseleccionarPinceles();
+    btnPincelLineaCuadros.classList.add('btn-seleccionado');
+});
+
+selectorGrosor.addEventListener("change", () => {
+    pincel.grosor = selectorGrosor.value;
+    valorGrosor.innerText = selectorGrosor.value + "px";
+});
+
+btnLimpiarCanvas.addEventListener("click", () => {
+    limpiarCanvas();
+});
+
+btnGuardar.addEventListener("click", () => {
+    let confirmacionGuardar = window.confirm("¿Estás seguro de que quieres guardar el dibujo? Esto podría hacer que el dibujo de la página se borrase.");
+    if(confirmacionGuardar){
+        let nombreDef = "dibujo" + (new Date()).getTime() + ".png"; 
+        let nombre = window.prompt("Introduce un nombre para el dibujo. Si no introduces ningún nombre, se guardará como " + nombreDef);
+    }
+});
 
 /*
  *  OTRAS COSAS 
 */
 
-document.getElementById("botonStop").addEventListener("click", () => {
+btnStop.addEventListener("click", () => {
     if(ejecutandose){
         ejecutandose = false;
     
-        document.getElementById("botonStop").style.backgroundColor = "red";
-        document.getElementById("btnStart").style.backgroundColor = "gray";
+        btnStop.style.backgroundColor = "red";
+        btnStart.style.backgroundColor = "gray";
 
         msg = "La aplicación se ha pausado.";
         window.alert(msg);
     }
 });
 
-document.getElementById("btnStart").addEventListener("click", () => {
+btnStart.addEventListener("click", () => {
     if(!ejecutandose){
         ejecutandose = true;
         
-        document.getElementById("botonStop").style.backgroundColor = "gray";
-        document.getElementById("btnStart").style.backgroundColor = "green";
+        btnStop.style.backgroundColor = "gray";
+        btnStart.style.backgroundColor = "green";
 
         msg = "La aplicación ha reanudado su ejecución .";
         window.alert(msg);
@@ -135,28 +217,16 @@ document.getElementById("btnStart").addEventListener("click", () => {
 
 // Loop principal
 
-/*
-function update(progress){
-
-}
-*/  
-
 function draw(progress){
-    if(pintar){
-        dibujo.ctx.fillStyle = pincel.color;
+    if(triggerPintar){
         
-        switch(pincel.forma) {
-            case "cuadro":
-                dibujo.ctx.fillRect(posicionRaton.dibujo.x - (pincel.grosor / 2), posicionRaton.dibujo.y - (pincel.grosor / 2), pincel.grosor, pincel.grosor);
-                break;
-            
-            case "linea":
-                dibujo.ctx.fillRect(pincel.ultimaPosicion.x, pincel.ultimaPosicion.y, Math.abs(pincel.ultimaPosicion.x - posicionRaton.x), Math.abs(pincel.ultimaPosicion.y - posicionRaton.y));
-                pincel.ultimaPosicion = {x: posicionRaton.x, y: posicionRaton.y};
-                break;
-        }
+        dibujo.ctx.fillStyle = pincel.color;
+        dibujo.ctx.strokeStyle = pincel.color;
+        dibujo.ctx.lineWidth = pincel.grosor;
+        
+        pintarConPincel(pincel.forma);
     }
-    
+    pincel.ultimaPosicion = {x: posicionRaton.x, y: posicionRaton.y};
 }
 
 function loop(timestamp){
@@ -173,8 +243,7 @@ function loop(timestamp){
     }
 
     if(posicionRaton.mouseActivo){
-        //update(progress);
-        draw();
+        draw(progress);
     }
 
     lastRender = timestamp;

@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paint 2</title>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
     <link rel="stylesheet" href="./css/style.css">
 </head>
 <body onresize="dimensionarCanvas()">
@@ -15,14 +17,25 @@
         </header>
         <main>
             <section>
-                <canvas id="canvasDibujo" class="canvas" oncontextmenu="return false"></canvas>
+                <canvas id="canvas" class="canvas" oncontextmenu="return false"></canvas>
             </section>
             <aside>
                 <div id="pinceles">
-                    <button class="btn-pincel">■</button>
+                    <button class="btn-pincel btn-seleccionado" id="pincelLinea" title="Pincel">
+                        <i class="fas fa-paint-brush"></i>  
+                    </button>
+                    <button class="btn-pincel" id="pincelCuadro" title="Brocha">
+                        <i class="fas fa-brush"></i>
+                    </button>
+                    <button class="btn-pincel" id="pincelLineaCuadros" title="Línea de cuadros">
+                        <i class="fas fa-swatchbook"></i>
+                    </button>
                 </div>
                 <div id="grosor">
-
+                    <div id="conjunto_grosor">
+                        <input type="range" id="selector_grosor" min="1" max="100" value="5">
+                        <span id="valor_grosor">5px</span>
+                    </div>
                 </div>
                 <div id="color">
                 <input type="color" id="colorPicker">
@@ -40,7 +53,6 @@
         </footer>
     </div>
 
-    <script src="./js/clases.js"></script>
     <script src="./js/main.js"></script>
 </body>
 </html>
